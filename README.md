@@ -2,8 +2,8 @@
 
 ### Регистрация и авторизация пользователей
 #### Регистрация:
-Необходимо выполнить POST запрос по адресу localhost:8080/api/auth/signup
-Тело запроса: 
+Необходимо выполнить POST запрос по адресу localhost:8080/api/auth/signup <br/> 
+Тело запроса: <br/> 
 {
     "username": "4abrec",
     "email": "4abrec@gmail.com",
