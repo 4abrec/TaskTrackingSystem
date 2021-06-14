@@ -1,6 +1,9 @@
 package web.task.track.domain;
 
-public enum EStatusFeature {
+public enum EStatus {
     OPEN,
+    IN_PROGRESS,
+    RESOLVED,
     COMPLETED
 }
+

@@ -14,9 +14,9 @@ import web.task.track.config.jwt.JwtUtils;
 import web.task.track.domain.ERole;
 import web.task.track.domain.Role;
 import web.task.track.domain.User;
-import web.task.track.dto.response.JwtResponse;
+import web.task.track.dto.response.JwtResponseDto;
 import web.task.track.dto.LoginDto;
-import web.task.track.dto.response.MessageResponse;
+import web.task.track.dto.response.MessageResponseDto;
 import web.task.track.dto.RegistrationDto;
 import web.task.track.repository.RoleRepository;
 import web.task.track.repository.UserRepository;
@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
     Авторизация пользователя.
      */
     @Override
-    public ResponseEntity<JwtResponse> login(LoginDto loginDto) {
+    public ResponseEntity<JwtResponseDto> login(LoginDto loginDto) {
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(
                         loginDto.getUsername(),
@@ -88,7 +88,7 @@ public class UserServiceImpl implements UserService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new JwtResponse(jwt,
+        return ResponseEntity.ok(new JwtResponseDto(jwt,
                 userDetails.getId(),
                 userDetails.getUsername(),
                 userDetails.getEmail(),
@@ -100,17 +100,17 @@ public class UserServiceImpl implements UserService {
     Затем пользоватею устанавляиваются роли.
      */
     @Override
-    public ResponseEntity<MessageResponse> registration(RegistrationDto registrationDto) {
+    public ResponseEntity<MessageResponseDto> registration(RegistrationDto registrationDto) {
         if (userRepository.existsByUsername(registrationDto.getUsername())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Username is exist"));
+                    .body(new MessageResponseDto("Error: Username is exist"));
         }
 
         if (userRepository.existsByEmail(registrationDto.getEmail())) {
             return ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Email is exist"));
+                    .body(new MessageResponseDto("Error: Email is exist"));
         }
 
         User user = new User(registrationDto.getUsername(),
@@ -157,7 +157,7 @@ public class UserServiceImpl implements UserService {
         }
         user.setRoles(roles);
         userRepository.save(user);
-        return ResponseEntity.ok(new MessageResponse("User CREATED"));
+        return ResponseEntity.ok(new MessageResponseDto("User CREATED"));
     }
 
     @Override

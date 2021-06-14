@@ -13,7 +13,7 @@ public interface TaskService {
 
     ResponseEntity<Task> add(TaskDto taskDto);
     Task resolveTask(Task task, User user);
-    List<Task> getPostEditHistory(Integer postID);
+    List<Task> getTaskEditHistory(Integer postID);
     List<Task> findAll();
     Task findById(Integer id);
     Task closeTask(Integer id);

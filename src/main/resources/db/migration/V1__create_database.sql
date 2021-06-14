@@ -1,10 +1,3 @@
-create table if not exists status
-(
-    id   serial     not null
-        constraint status_pk
-            primary key,
-    name varchar(25) not null
-);
 
 create table role
 (
@@ -59,9 +52,7 @@ create table if not exists task
     feature_id      integer      not null
         constraint task_fk0
             references feature,
-    status_id       integer      not null
-        constraint task_fk1
-            references status,
+    status       varchar      not null,
     bug_id          integer
 );
 

@@ -31,13 +31,13 @@ public class Task {
     @Audited
     private User user;
 
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private EStatus status;
+
     @ManyToOne
     @JoinColumn(name = "feature_id")
     private Feature feature;
-
-    @ManyToOne
-    @JoinColumn(name = "status_id")
-    private Status status;
 
     @OneToOne
     @JoinColumn(name = "bug_id", referencedColumnName = "id")
@@ -56,7 +56,7 @@ public class Task {
         return editVersion;
     }
 
-    public Task(String title, String description, User user, Feature feature, Status status) {
+    public Task(String title, String description, User user, Feature feature, EStatus status) {
         this.title = title;
         this.description = description;
         this.user = user;

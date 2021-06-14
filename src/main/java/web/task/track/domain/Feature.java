@@ -36,12 +36,12 @@ public class Feature {
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private EStatusFeature statusFeature;
+    private EStatus statusFeature;
 
     public Feature(String title, String description, Set<User> users) {
         this.title = title;
         this.description = description;
         this.users = users;
-        this.statusFeature = EStatusFeature.OPEN;
+        this.statusFeature = EStatus.OPEN;
     }
 }

@@ -10,7 +10,6 @@ import web.task.track.dto.FeatureDto;
 import web.task.track.repository.FeatureRepository;
 import web.task.track.repository.UserRepository;
 import web.task.track.service.FeatureService;
-import web.task.track.service.StatusService;
 import web.task.track.service.UserService;
 import java.util.HashSet;
 import java.util.List;
@@ -21,17 +20,14 @@ public class FeatureServiceImpl implements FeatureService {
 
     private final FeatureRepository featureRepository;
     private final UserRepository userRepository;
-    private final StatusService statusService;
     private final UserService userService;
 
     @Autowired
     public FeatureServiceImpl(FeatureRepository featureRepository,
                               UserRepository userRepository,
-                              StatusService statusService,
                               UserService userService) {
         this.featureRepository = featureRepository;
         this.userRepository = userRepository;
-        this.statusService = statusService;
         this.userService = userService;
     }
 
@@ -67,14 +63,13 @@ public class FeatureServiceImpl implements FeatureService {
      */
     @Override
     public Feature closeFeature(Integer id) {
-        Status status = statusService.findByName(EStatusTask.COMPLETED);
         Feature feature = featureRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This feature does not exist"));
         boolean isCompleted = feature.getTasks()
                 .stream()
-                .allMatch(task -> task.getStatus().equals(status));
+                .allMatch(task -> task.getStatus().equals(EStatus.COMPLETED));
         if (isCompleted){
-            feature.setStatusFeature(EStatusFeature.COMPLETED);
+            feature.setStatusFeature(EStatus.COMPLETED);
             save(feature);
             return feature;
         }

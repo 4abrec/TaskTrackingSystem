@@ -9,7 +9,6 @@ import web.task.track.dto.BugDto;
 import web.task.track.dto.TaskDto;
 import web.task.track.repository.BugRepository;
 import web.task.track.repository.RoleRepository;
-import web.task.track.repository.StatusRepository;
 import web.task.track.repository.TaskRepository;
 import web.task.track.service.FeatureService;
 import web.task.track.service.TaskService;
@@ -24,7 +23,6 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final FeatureService featureService;
-    private final StatusRepository statusRepository;
     private final BugRepository bugRepository;
     private final RoleRepository roleRepository;
     private final UserService userService;
@@ -32,13 +30,11 @@ public class TaskServiceImpl implements TaskService {
     @Autowired
     public TaskServiceImpl(TaskRepository taskRepository,
                            FeatureService featureService,
-                           StatusRepository statusRepository,
                            BugRepository bugRepository,
                            RoleRepository roleRepository,
                            UserService userService) {
         this.taskRepository = taskRepository;
         this.featureService = featureService;
-        this.statusRepository = statusRepository;
         this.bugRepository = bugRepository;
         this.roleRepository = roleRepository;
         this.userService = userService;
@@ -48,10 +44,9 @@ public class TaskServiceImpl implements TaskService {
     Получении истории смены текущего исполнителя у задания.
      */
     @Override
-    public List<Task> getPostEditHistory(Integer postID) {
-
+    public List<Task> getTaskEditHistory(Integer taskID) {
         List<Task> historyList = new ArrayList<>();
-        taskRepository.findRevisions(postID).get().forEach(task -> {
+        taskRepository.findRevisions(taskID).get().forEach(task -> {
             task.getEntity().setEditVersion(task.getMetadata());
             historyList.add(task.getEntity());
         });
@@ -86,8 +81,8 @@ public class TaskServiceImpl implements TaskService {
     }
 
     /*
-        Создание Task. Она сразу переводится на DEVELOPER, Status переводится в IN_PROGRESS.
-         */
+    Создание Task. Она сразу переводится на DEVELOPER, Status переводится в IN_PROGRESS.
+     */
     @Override
     public ResponseEntity<Task> add(TaskDto taskDto) {
         User user = userService.findByUsername(taskDto.getUsername());
@@ -98,8 +93,7 @@ public class TaskServiceImpl implements TaskService {
         Feature feature = featureService.findById(taskDto.getFeatureId());
         if (!feature.getUsers().contains(user))
             throw new RuntimeException("The user is not involved in the development feature");
-        Status status = statusRepository.findByName(EStatusTask.IN_PROGRESS);
-        Task task = new Task(taskDto.getTitle(), taskDto.getDescription(), user, feature, status);
+        Task task = new Task(taskDto.getTitle(), taskDto.getDescription(), user, feature, EStatus.IN_PROGRESS);
         taskRepository.save(task);
         return new ResponseEntity<>(task, HttpStatus.OK);
     }
@@ -113,7 +107,6 @@ public class TaskServiceImpl implements TaskService {
         Role currentRole = roleRepository.findByName(ERole.ROLE_DEVELOPER)
                     .orElseThrow(() -> new RuntimeException("Error, Role DEVELOPER is not found"));
         if(task.getUser().getRoles().contains(currentRole)){
-            Status status = statusRepository.findByName(EStatusTask.RESOLVED);
             Feature feature = task.getFeature();
             Role nextRole = roleRepository.findByName(ERole.ROLE_TESTER)
                     .orElseThrow(() -> new RuntimeException("Error, Role TESTER is not found"));
@@ -121,7 +114,7 @@ public class TaskServiceImpl implements TaskService {
                 throw new RuntimeException("This user is not a tester");
             if (!feature.getUsers().contains(user))
                 throw new RuntimeException("The user is not involved in the development feature");
-            task.setStatus(status);
+            task.setStatus(EStatus.RESOLVED);
             task.setUser(user);
             taskRepository.save(task);
             return  task;
@@ -139,10 +132,9 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public Task returnTask(BugDto bugDto) {
         Task bugTask = findById(bugDto.getTaskId());
-        Status status = statusRepository.findByName(EStatusTask.IN_PROGRESS);
         Bug bug = new Bug(bugDto.getTitle(), bugDto.getDescription(), bugTask);
         bugRepository.save(bug);
-        List<Task> historyTasks = getPostEditHistory(bugDto.getTaskId());
+        List<Task> historyTasks = getTaskEditHistory(bugDto.getTaskId());
         Role developerRole = roleRepository.findByName(ERole.ROLE_DEVELOPER)
                 .orElseThrow(() -> new RuntimeException("Error, Role DEVELOPER is not found"));
         List<Task> tasks = historyTasks
@@ -152,7 +144,7 @@ public class TaskServiceImpl implements TaskService {
         Task historyTask = tasks.get(tasks.size() - 1);
         User user = userService.findById(historyTask.getUser().getId());
         bugTask.setUser(user);
-        bugTask.setStatus(status);
+        bugTask.setStatus(EStatus.IN_PROGRESS);
         bugTask.setBug(bug);
         save(bugTask);
         return bugTask;
@@ -167,9 +159,8 @@ public class TaskServiceImpl implements TaskService {
         Role nextRole = roleRepository.findByName(ERole.ROLE_TESTER)
                 .orElseThrow(() -> new RuntimeException("Error, Role TESTER is not found"));
         if(task.getUser().getRoles().contains(nextRole)){
-            Status status = statusRepository.findByName(EStatusTask.COMPLETED);
             task.setBug(null);
-            task.setStatus(status);
+            task.setStatus(EStatus.COMPLETED);
             save(task);
             return task;
         }
