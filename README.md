@@ -8,9 +8,10 @@
 {
     "username": "4abrec",
     "email": "4abrec@gmail.com", 
-    "password": "1234","firstName": 
-    "Artyom","lastName": 
-    "Cherkasov","roles": ["tester"]
+    "password": "1234",
+    "firstName": "Artyom",
+    "lastName": "Cherkasov",
+    "roles": ["manager"]
 }
 ```
 В массиве roles необходимо указать роль: manager, developer или tester.<br/> 
