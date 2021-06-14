@@ -1,5 +1,5 @@
 
-create table role
+create table if not exists role
 (
     id   serial     not null
         constraint role_pk
@@ -78,7 +78,7 @@ create table if not exists bug
     title       varchar(100) not null,
     description varchar      not null
 );
-ALTER TABLE task ADD CONSTRAINT "task_fk2" FOREIGN KEY ("bug_id") REFERENCES bug("id");
+alter table task add constraint "task_fk2" foreign key ("bug_id") references bug("id");
 
 
 
