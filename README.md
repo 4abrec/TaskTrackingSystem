@@ -1,6 +1,7 @@
 ## API трекинга задач
 ### Тестирование API
-Необходимо перейти по ссылке http://localhost:8080/swagger-ui.html#/
+Необходимо перейти по ссылке http://localhost:8080/swagger-ui.html#/ <br/> 
+Формат Authorization токена: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI0YWJyZWMiLCJpYXQiOjE2MjM3NjE2NjksImV4cCI6MTYyMzg0ODA2OX0.hRO-l-WGKyqbESiFW5sH5GAoq3Jh6ClRCW2FB4BE9YIMAJQlEK8gIpYCilao3fzSV6EW_Yxr9dgnrDnQYwmV3Q
 ### Регистрация и авторизация пользователей
 #### Регистрация:
 Необходимо выполнить POST запрос по адресу localhost:8080/api/auth/signup <br/> 
