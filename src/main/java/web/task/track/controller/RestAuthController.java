@@ -1,5 +1,7 @@
 package web.task.track.controller;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +16,7 @@ import web.task.track.service.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
+@Api(description = "Регистрация и авторизация")
 public class RestAuthController {
 
     private final UserService userService;
@@ -24,11 +27,13 @@ public class RestAuthController {
     }
 
     @PostMapping("/login")
+    @ApiOperation(value = "Авторизация")
     public ResponseEntity<JwtResponseDto> authUser(@RequestBody LoginDto loginDto) {
         return userService.login(loginDto);
     }
 
     @PostMapping("/signup")
+    @ApiOperation(value = "Регистрация")
     public ResponseEntity<MessageResponseDto> registerUser(@RequestBody RegistrationDto registrationDto) {
         return userService.registration(registrationDto);
     }

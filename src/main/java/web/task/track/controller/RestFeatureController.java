@@ -1,5 +1,7 @@
 package web.task.track.controller;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/feature")
+@Api(description = "Операции с feature")
 public class RestFeatureController {
 
     private final FeatureService featureService;
@@ -22,38 +25,39 @@ public class RestFeatureController {
         this.featureService = featureService;
     }
 
-    /*
-    Добавление Feature. Доступно только MANAGER
-     */
+
     @PreAuthorize("hasRole('MANAGER')")
     @PostMapping ("/add")
+    @ApiOperation(value = "Добавление feature. Доступно только менеджеру")
     public ResponseEntity<Feature> addFeature(@Validated @RequestBody FeatureDto featureDto){
         return featureService.add(featureDto);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
+    @ApiOperation(value = "Удаление feature. Доступно только администратору")
     public void deleteFeature(@PathVariable Integer id){
         featureService.deleteById(id);
     }
 
     @GetMapping("/{id}")
+    @ApiOperation(value = "Получение feature по id")
     public ResponseEntity<Feature> getFeature(@PathVariable Integer id){
         Feature feature = featureService.findById(id);
         return new ResponseEntity<>(feature, HttpStatus.OK);
     }
 
     @GetMapping
+    @ApiOperation(value = "Получение всех feature")
     public ResponseEntity<List<Feature>> getAllFeature(){
         List<Feature> features = featureService.findAll();
         return new ResponseEntity<>(features, HttpStatus.OK);
     }
 
-    /*
-    Закрытие Feature. Доступно только MANAGER
-     */
+
     @PreAuthorize("hasRole('MANAGER')")
     @GetMapping("/close/{id}")
+    @ApiOperation(value = "Закрытие feature. Доступно только менеджеру")
     public ResponseEntity<Feature> closeFeature(@PathVariable Integer id){
         Feature feature = featureService.closeFeature(id);
         return new ResponseEntity<>(feature, HttpStatus.OK);

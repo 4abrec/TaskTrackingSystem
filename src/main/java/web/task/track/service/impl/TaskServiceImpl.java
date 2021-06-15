@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import web.task.track.domain.*;
 import web.task.track.dto.BugDto;
-import web.task.track.dto.TaskDto;
+import web.task.track.dto.AddTaskDto;
 import web.task.track.repository.BugRepository;
 import web.task.track.repository.RoleRepository;
 import web.task.track.repository.TaskRepository;
@@ -80,20 +80,25 @@ public class TaskServiceImpl implements TaskService {
         return feature.getTasks();
     }
 
-    /*
-    Создание Task. Она сразу переводится на DEVELOPER, Status переводится в IN_PROGRESS.
-     */
     @Override
-    public ResponseEntity<Task> add(TaskDto taskDto) {
-        User user = userService.findByUsername(taskDto.getUsername());
+    public Task findByUserAndTitleAndStatus(User user, String title, EStatus status) {
+        return taskRepository.findByUserAndTitleAndStatus(user, title, status);
+    }
+
+    /*
+        Создание Task. Она сразу переводится на DEVELOPER, Status переводится в IN_PROGRESS.
+         */
+    @Override
+    public ResponseEntity<Task> add(AddTaskDto addTaskDto) {
+        User user = userService.findByUsername(addTaskDto.getUsername());
         Role role = roleRepository.findByName(ERole.ROLE_DEVELOPER)
                 .orElseThrow(() -> new RuntimeException("Error, Role DEVELOPER is not found"));
         if (!user.getRoles().contains(role))
             throw new RuntimeException("This user is not a developer");
-        Feature feature = featureService.findById(taskDto.getFeatureId());
+        Feature feature = featureService.findById(addTaskDto.getFeatureId());
         if (!feature.getUsers().contains(user))
             throw new RuntimeException("The user is not involved in the development feature");
-        Task task = new Task(taskDto.getTitle(), taskDto.getDescription(), user, feature, EStatus.IN_PROGRESS);
+        Task task = new Task(addTaskDto.getTitle(), addTaskDto.getDescription(), user, feature, EStatus.IN_PROGRESS);
         taskRepository.save(task);
         return new ResponseEntity<>(task, HttpStatus.OK);
     }
