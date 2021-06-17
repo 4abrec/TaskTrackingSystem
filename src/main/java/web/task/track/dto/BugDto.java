@@ -12,6 +12,7 @@ public class BugDto {
     @ApiModelProperty(example = "test")
     private String description;
 
+
     @ApiModelProperty(example = "1")
     private Integer taskId;
 }

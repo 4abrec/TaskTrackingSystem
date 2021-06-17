@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import web.task.track.domain.User;
+import web.task.track.exception.ObjectNotFoundException;
 import web.task.track.service.UserService;
 import java.util.List;
 
@@ -26,9 +27,13 @@ public class RestUserController {
 
     @GetMapping("/{id}")
     @ApiOperation(value = "Поиск пользователя по id")
-    public ResponseEntity<User> getUser(@PathVariable Integer id){
-        User user = userService.findById(id);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+    public ResponseEntity<?> getUser(@PathVariable Integer id){
+        try {
+            User user = userService.findById(id);
+            return new ResponseEntity<>(user, HttpStatus.OK);
+        } catch (ObjectNotFoundException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PreAuthorize("hasRole('DEVELOPER')")

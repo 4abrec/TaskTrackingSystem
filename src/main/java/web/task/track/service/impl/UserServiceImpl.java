@@ -1,26 +1,29 @@
 package web.task.track.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import web.task.track.config.jwt.JwtUtils;
 import web.task.track.domain.ERole;
 import web.task.track.domain.Role;
+import web.task.track.domain.Task;
 import web.task.track.domain.User;
 import web.task.track.dto.response.JwtResponseDto;
 import web.task.track.dto.LoginDto;
 import web.task.track.dto.response.MessageResponseDto;
 import web.task.track.dto.RegistrationDto;
+import web.task.track.exception.ObjectNotFoundException;
+import web.task.track.exception.constant.RoleExceptionConstants;
 import web.task.track.repository.RoleRepository;
 import web.task.track.repository.UserRepository;
 import web.task.track.service.UserService;
+
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,15 +52,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User findById(Integer id) {
+    public User findById(Integer id) throws ObjectNotFoundException {
         return userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with id: " + id));
+                .orElseThrow(() -> new ObjectNotFoundException("User Not Found with id: " + id));
     }
 
     @Override
-    public User findByUsername(String username) {
+    public User findByUsername(String username) throws ObjectNotFoundException {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+                .orElseThrow(() -> new ObjectNotFoundException("User Not Found with username: " + username));
     }
 
     @Override
@@ -70,11 +73,21 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    /*
-    Авторизация пользователя.
-     */
     @Override
-    public ResponseEntity<JwtResponseDto> login(LoginDto loginDto) {
+    public List<User> findUserInTaskEditHistory(List<Task> historyTasks) throws ObjectNotFoundException {
+        List<User> users = new ArrayList<>();
+        for (Task task: historyTasks){
+            User user = findById(task.getUser().getId());
+            users.add(user);
+        }
+        return users;
+    }
+
+    /*
+        Авторизация пользователя.
+         */
+    @Override
+    public JwtResponseDto login(LoginDto loginDto) {
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(
                         loginDto.getUsername(),
@@ -88,11 +101,11 @@ public class UserServiceImpl implements UserService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new JwtResponseDto(jwt,
+        return new JwtResponseDto(jwt,
                 userDetails.getId(),
                 userDetails.getUsername(),
                 userDetails.getEmail(),
-                roles));
+                roles);
     }
 
     /*
@@ -100,17 +113,12 @@ public class UserServiceImpl implements UserService {
     Затем пользоватею устанавляиваются роли.
      */
     @Override
-    public ResponseEntity<MessageResponseDto> registration(RegistrationDto registrationDto) {
-        if (userRepository.existsByUsername(registrationDto.getUsername())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponseDto("Error: Username is exist"));
-        }
+    public MessageResponseDto registration(RegistrationDto registrationDto) throws ObjectNotFoundException {
+        if (userRepository.existsByUsername(registrationDto.getUsername()))
+            return new MessageResponseDto("Error: Username is exist");
 
         if (userRepository.existsByEmail(registrationDto.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponseDto("Error: Email is exist"));
+            return new MessageResponseDto("Error: Email is exist");
         }
 
         User user = new User(registrationDto.getUsername(),
@@ -122,42 +130,38 @@ public class UserServiceImpl implements UserService {
         Set<Role> roles = new HashSet<>();
 
         if (reqRoles == null) {
-            Role userRole = roleRepository
-                    .findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error, Role USER is not found"));
+            Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                    .orElseThrow(() -> new ObjectNotFoundException(RoleExceptionConstants.NOT_FOUND_USER));
             roles.add(userRole);
         } else {
-            reqRoles.forEach(role -> {
+            for(String role: reqRoles){
                 switch (role) {
                     case "manager":
-                        Role roleManager = roleRepository
-                                .findByName(ERole.ROLE_MANAGER)
-                                .orElseThrow(() -> new RuntimeException("Error, Role MANAGER is not found"));
+                        Role roleManager = roleRepository.findByName(ERole.ROLE_MANAGER)
+                                .orElseThrow(() -> new ObjectNotFoundException(RoleExceptionConstants.NOT_FOUND_MANAGER));
                         roles.add(roleManager);
                         break;
 
                     case "developer":
-                        Role roleDeveloper = roleRepository
-                                .findByName(ERole.ROLE_DEVELOPER)
-                                .orElseThrow(() -> new RuntimeException("Error, Role DEVELOPER is not found"));
+                        Role roleDeveloper = roleRepository.findByName(ERole.ROLE_DEVELOPER)
+                                .orElseThrow(() -> new ObjectNotFoundException(RoleExceptionConstants.NOT_FOUND_DEVELOPER));
                         roles.add(roleDeveloper);
                         break;
 
                     case "tester":
-                        Role modRole = roleRepository
-                                .findByName(ERole.ROLE_TESTER)
-                                .orElseThrow(() -> new RuntimeException("Error, Role TESTER is not found"));
+                        Role modRole = roleRepository.findByName(ERole.ROLE_TESTER)
+                                .orElseThrow(() -> new ObjectNotFoundException(RoleExceptionConstants.NOT_FOUND_TESTER));;
                         roles.add(modRole);
                         break;
 
                     default:
-                        throw new RuntimeException("Error, Role " + role + " is not found");
+                        throw new ObjectNotFoundException("Error, Role " + role + " is not found");
                 }
-            });
+            }
         }
         user.setRoles(roles);
         userRepository.save(user);
-        return ResponseEntity.ok(new MessageResponseDto("User CREATED"));
+        return new MessageResponseDto("User " + user.getUsername() + " CREATED");
     }
 
     @Override

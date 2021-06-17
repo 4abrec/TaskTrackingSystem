@@ -10,12 +10,14 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import web.task.track.domain.Feature;
 import web.task.track.dto.FeatureDto;
+import web.task.track.exception.ObjectNotFoundException;
+import web.task.track.exception.TaskNotCompletedException;
 import web.task.track.service.FeatureService;
 import java.util.List;
 
 @RestController
 @RequestMapping("api/feature")
-@Api(description = "Операции с feature")
+@Api(description = "Операции с Feature")
 public class RestFeatureController {
 
     private final FeatureService featureService;
@@ -29,8 +31,12 @@ public class RestFeatureController {
     @PreAuthorize("hasRole('MANAGER')")
     @PostMapping ("/add")
     @ApiOperation(value = "Добавление feature. Доступно только менеджеру")
-    public ResponseEntity<Feature> addFeature(@Validated @RequestBody FeatureDto featureDto){
-        return featureService.add(featureDto);
+    public ResponseEntity<?> addFeature(@Validated @RequestBody FeatureDto featureDto){
+        try {
+            return new ResponseEntity<>(featureService.add(featureDto), HttpStatus.CREATED);
+        } catch (ObjectNotFoundException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -42,9 +48,13 @@ public class RestFeatureController {
 
     @GetMapping("/{id}")
     @ApiOperation(value = "Получение feature по id")
-    public ResponseEntity<Feature> getFeature(@PathVariable Integer id){
-        Feature feature = featureService.findById(id);
-        return new ResponseEntity<>(feature, HttpStatus.OK);
+    public ResponseEntity<?> getFeature(@PathVariable Integer id){
+        try {
+            Feature feature = featureService.findById(id);
+            return new ResponseEntity<>(feature, HttpStatus.OK);
+        } catch (ObjectNotFoundException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.OK);
+        }
     }
 
     @GetMapping
@@ -58,9 +68,12 @@ public class RestFeatureController {
     @PreAuthorize("hasRole('MANAGER')")
     @GetMapping("/close/{id}")
     @ApiOperation(value = "Закрытие feature. Доступно только менеджеру")
-    public ResponseEntity<Feature> closeFeature(@PathVariable Integer id){
-        Feature feature = featureService.closeFeature(id);
-        return new ResponseEntity<>(feature, HttpStatus.OK);
+    public ResponseEntity<?> closeFeature(@PathVariable Integer id){
+        try {
+            Feature feature = featureService.closeFeature(id);
+            return new ResponseEntity<>(feature, HttpStatus.OK);
+        } catch (ObjectNotFoundException | TaskNotCompletedException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
-
 }

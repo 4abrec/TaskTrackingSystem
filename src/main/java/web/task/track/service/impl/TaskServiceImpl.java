@@ -1,16 +1,17 @@
 package web.task.track.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import web.task.track.domain.*;
-import web.task.track.dto.BugDto;
 import web.task.track.dto.AddTaskDto;
-import web.task.track.repository.BugRepository;
-import web.task.track.repository.RoleRepository;
+import web.task.track.exception.ObjectNotFoundException;
+import web.task.track.exception.WrongRoleException;
+import web.task.track.exception.WrongStatusException;
+import web.task.track.exception.WrongUserException;
+import web.task.track.exception.constant.WrongUserExceptionConstants;
 import web.task.track.repository.TaskRepository;
 import web.task.track.service.FeatureService;
+import web.task.track.service.RoleService;
 import web.task.track.service.TaskService;
 import web.task.track.service.UserService;
 import java.util.ArrayList;
@@ -23,26 +24,23 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final FeatureService featureService;
-    private final BugRepository bugRepository;
-    private final RoleRepository roleRepository;
+    private final RoleService roleService;
     private final UserService userService;
 
     @Autowired
     public TaskServiceImpl(TaskRepository taskRepository,
                            FeatureService featureService,
-                           BugRepository bugRepository,
-                           RoleRepository roleRepository,
-                           UserService userService) {
+                           UserService userService,
+                           RoleService roleService) {
         this.taskRepository = taskRepository;
         this.featureService = featureService;
-        this.bugRepository = bugRepository;
-        this.roleRepository = roleRepository;
         this.userService = userService;
+        this.roleService = roleService;
     }
 
     /*
     Получении истории смены текущего исполнителя у задания.
-     */
+    */
     @Override
     public List<Task> getTaskEditHistory(Integer taskID) {
         List<Task> historyList = new ArrayList<>();
@@ -59,9 +57,9 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Task findById(Integer id){
+    public Task findById(Integer id) throws ObjectNotFoundException {
         return taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task Not Found with id: " + id));
+                .orElseThrow(() -> new ObjectNotFoundException("Task Not Found with id: " + id));
     }
 
     @Override
@@ -75,101 +73,136 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Set<Task> inFeature(Integer id) {
+    public Set<Task> getTasksInFeature(Integer id) throws ObjectNotFoundException {
         Feature feature = featureService.findById(id);
         return feature.getTasks();
     }
 
+
     @Override
-    public Task findByUserAndTitleAndStatus(User user, String title, EStatus status) {
-        return taskRepository.findByUserAndTitleAndStatus(user, title, status);
+    public Task findByUserAndTitleAndStatus(User user, String title, EStatus status) throws ObjectNotFoundException {
+        return taskRepository.findByUserAndTitleAndStatus(user, title, status)
+                .orElseThrow(() -> new ObjectNotFoundException("Task not found with user: " + user +
+                                                                ", title: " + title + ", status: " + status));
     }
 
     /*
-        Создание Task. Она сразу переводится на DEVELOPER, Status переводится в IN_PROGRESS.
-         */
-    @Override
-    public ResponseEntity<Task> add(AddTaskDto addTaskDto) {
-        User user = userService.findByUsername(addTaskDto.getUsername());
-        Role role = roleRepository.findByName(ERole.ROLE_DEVELOPER)
-                .orElseThrow(() -> new RuntimeException("Error, Role DEVELOPER is not found"));
-        if (!user.getRoles().contains(role))
-            throw new RuntimeException("This user is not a developer");
-        Feature feature = featureService.findById(addTaskDto.getFeatureId());
-        if (!feature.getUsers().contains(user))
-            throw new RuntimeException("The user is not involved in the development feature");
-        Task task = new Task(addTaskDto.getTitle(), addTaskDto.getDescription(), user, feature, EStatus.IN_PROGRESS);
-        taskRepository.save(task);
-        return new ResponseEntity<>(task, HttpStatus.OK);
-    }
-
-    /*
-    Решение задачи юзером с ролью developer. Статус переводится в RESOLVED, а текущим юзером
-    становится TESTER, который принимает учатие в разработке.
+     Создание Task. Она сразу переводится на DEVELOPER, Status переводится в IN_PROGRESS.
      */
     @Override
-    public Task resolveTask(Task task, User user) {
-        Role currentRole = roleRepository.findByName(ERole.ROLE_DEVELOPER)
-                    .orElseThrow(() -> new RuntimeException("Error, Role DEVELOPER is not found"));
-        if(task.getUser().getRoles().contains(currentRole)){
-            Feature feature = task.getFeature();
-            Role nextRole = roleRepository.findByName(ERole.ROLE_TESTER)
-                    .orElseThrow(() -> new RuntimeException("Error, Role TESTER is not found"));
-            if (!user.getRoles().contains(nextRole))
-                throw new RuntimeException("This user is not a tester");
-            if (!feature.getUsers().contains(user))
-                throw new RuntimeException("The user is not involved in the development feature");
-            task.setStatus(EStatus.RESOLVED);
-            task.setUser(user);
-            taskRepository.save(task);
-            return  task;
+    public Task add(AddTaskDto addTaskDto, String username) throws ObjectNotFoundException, WrongRoleException {
+        User user = userService.findByUsername(username);
+        Feature feature = featureService.findById(addTaskDto.getFeatureId());
+        if (!feature.getUsers().contains(user))
+            throw new ObjectNotFoundException("The user is not involved in the development feature");
+        Task task = new Task(addTaskDto.getTitle(), addTaskDto.getDescription(), user, feature, EStatus.OPEN);
+        taskRepository.save(task);
+        return task;
+    }
+
+    @Override
+    public Task assignToDeveloper(Integer id, String devUsername,String principalUsername) throws ObjectNotFoundException,
+                                                                                                  WrongRoleException,
+                                                                                                  WrongStatusException,
+                                                                                                  WrongUserException {
+        Task task = findById(id);
+        if (!task.getUser().equals(userService.findByUsername(principalUsername)))
+            throw new WrongUserException(WrongUserExceptionConstants.NOT_THE_CURRENT_ASSIGNEE);
+        User nextUser = userService.findByUsername(devUsername);
+        Role nextRole = roleService.findByName(ERole.ROLE_DEVELOPER);
+        Feature feature = task.getFeature();
+        if (!feature.getUsers().contains(nextUser))
+            throw new ObjectNotFoundException("The nextUser is not involved in the development feature");
+        if (!nextUser.getRoles().contains(nextRole))
+            throw new WrongRoleException("This nextUser is not a developer");
+        if(task.getStatus().equals(EStatus.OPEN)){
+            task.setUser(nextUser);
+            task.setStatus(EStatus.IN_PROGRESS);
+            save(task);
+            return task;
         }
-        else
-            throw new RuntimeException("It is impossible to solve the task, since it is not under development");
+        else throw new WrongStatusException("Task is not in status OPEN");
+
+    }
+
+    /*
+    Решение задачи юзером с ролью developer. Статус переводится в RESOLVED.
+    */
+    @Override
+    public void resolveTask(Task task, User user) throws  WrongUserException {
+        User currentUser = task.getUser();
+        if (!currentUser.equals(user))
+            throw new WrongUserException(WrongUserExceptionConstants.NOT_THE_CURRENT_ASSIGNEE);
+        task.setStatus(EStatus.RESOLVED);
+        taskRepository.save(task);
+    }
+
+    @Override
+    public Task assignToTester(Integer id, String testerUsername, String principalUsername) throws ObjectNotFoundException,
+                                                                                                   WrongUserException,
+                                                                                                   WrongRoleException,
+                                                                                                   WrongStatusException {
+        Task task = findById(id);
+        if (!task.getUser().equals(userService.findByUsername(principalUsername)))
+            throw new WrongUserException(WrongUserExceptionConstants.NOT_THE_CURRENT_ASSIGNEE);
+        User nextUser = userService.findByUsername(testerUsername);
+        Role nextRole = roleService.findByName(ERole.ROLE_TESTER);
+        Feature feature = task.getFeature();
+        if (!feature.getUsers().contains(nextUser))
+            throw new ObjectNotFoundException("The nextUser is not involved in the development feature");
+        if (!nextUser.getRoles().contains(nextRole))
+            throw new WrongRoleException("This nextUser is not a tester");
+        if(task.getStatus().equals(EStatus.RESOLVED)){
+            task.setUser(nextUser);
+            save(task);
+            return task;
+        }
+        else throw new WrongStatusException("Task is not in status RESOLVED");
     }
 
     /*
     Возврат тестером задания на предыдущего developer. Из аудиторской таблицы выбираются
-    записи конкретной task. Затем из этой выборки идет получение записей, в которых
+    записи конкретной bugTask. Затем из этой выборки идет получение записей, в которых
     текущий юзер - developer. Task возвращается последнему developer, который с ней работал.
     Также создается Bug для данной Task и ее статус переводится обратно в IN_PROGRESS.
-     */
+    */
     @Override
-    public Task returnTask(BugDto bugDto) {
-        Task bugTask = findById(bugDto.getTaskId());
-        Bug bug = new Bug(bugDto.getTitle(), bugDto.getDescription(), bugTask);
-        bugRepository.save(bug);
-        List<Task> historyTasks = getTaskEditHistory(bugDto.getTaskId());
-        Role developerRole = roleRepository.findByName(ERole.ROLE_DEVELOPER)
-                .orElseThrow(() -> new RuntimeException("Error, Role DEVELOPER is not found"));
-        List<Task> tasks = historyTasks
-                .stream()
-                .filter(task -> task.getUser().getRoles().contains(developerRole))
-                .collect(Collectors.toList());
-        Task historyTask = tasks.get(tasks.size() - 1);
-        User user = userService.findById(historyTask.getUser().getId());
-        bugTask.setUser(user);
+    public void returnTask(Task bugTask, String principalUsername) throws ObjectNotFoundException, WrongUserException, WrongStatusException {
+
+        if (!bugTask.getUser().equals(userService.findByUsername(principalUsername)))
+            throw new WrongUserException(WrongUserExceptionConstants.NOT_THE_CURRENT_ASSIGNEE);
+        Set<Bug> bugs = bugTask.getBug();
+        if (bugs == null)
+            throw new ObjectNotFoundException("There must be a bug to return the task");
+        boolean isOpenBug = bugs.stream().anyMatch(bug -> bug.getStatus().equals(EStatus.OPEN));
+        if(!isOpenBug)
+            throw new WrongStatusException("No bugs are in the state OPEN");
+        List<Task> historyTasks = getTaskEditHistory(bugTask.getId());
+        Role developerRole = roleService.findByName(ERole.ROLE_DEVELOPER);
+        List<User> userInTaskEditHistory = userService.findUserInTaskEditHistory(historyTasks);
+        List<User> devUsers = userInTaskEditHistory.stream()
+                                   .filter(user -> user.getRoles().contains(developerRole)).collect(Collectors.toList());
+        User previousUser = devUsers.get(devUsers.size() - 1);
+        bugTask.setUser(previousUser);
         bugTask.setStatus(EStatus.IN_PROGRESS);
-        bugTask.setBug(bug);
         save(bugTask);
-        return bugTask;
     }
 
     /*
     Закрытие Task тестером. Bug переводится в состояние null, а стаус в состояние COMPLETED.
      */
     @Override
-    public Task closeTask(Integer id) {
+    public Task closeTask(Integer id, String principalUsername) throws WrongStatusException, ObjectNotFoundException, WrongUserException {
         Task task = findById(id);
-        Role nextRole = roleRepository.findByName(ERole.ROLE_TESTER)
-                .orElseThrow(() -> new RuntimeException("Error, Role TESTER is not found"));
-        if(task.getUser().getRoles().contains(nextRole)){
-            task.setBug(null);
+        if (!task.getUser().equals(userService.findByUsername(principalUsername)))
+            throw new WrongUserException(WrongUserExceptionConstants.NOT_THE_CURRENT_ASSIGNEE);
+        boolean isAllBugCompleted = task.getBug().stream().allMatch(bug -> bug.getStatus().equals(EStatus.COMPLETED));
+        if (isAllBugCompleted || task.getBug() == null){
             task.setStatus(EStatus.COMPLETED);
-            save(task);
+            taskRepository.save(task);
             return task;
         }
         else
-            throw new RuntimeException("It is impossible to close the task, since it is performed by the developer");
+            throw new WrongStatusException("It is impossible to close the task, since it is performed by the developer");
     }
 }

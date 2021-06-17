@@ -12,8 +12,6 @@ public class AddTaskDto {
     @ApiModelProperty(example = "test")
     private String description;
 
-    @ApiModelProperty(example = "5abrec")
-    private String username;
 
     @ApiModelProperty(example = "1")
     private Integer featureId;

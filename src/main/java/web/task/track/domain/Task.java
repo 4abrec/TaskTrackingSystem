@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.envers.Audited;
 import org.springframework.data.history.RevisionMetadata;
 import javax.persistence.*;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -37,11 +38,11 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "feature_id")
+    @JsonIgnore
     private Feature feature;
 
-    @OneToOne
-    @JoinColumn(name = "bug_id", referencedColumnName = "id")
-    private Bug bug;
+    @OneToMany(mappedBy = "task")
+    private Set<Bug> bug;
 
     @Transient
     @JsonIgnore
@@ -64,4 +65,12 @@ public class Task {
         this.status = status;
     }
 
+    @Override
+    public String toString() {
+        return "Task{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

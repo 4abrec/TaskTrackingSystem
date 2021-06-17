@@ -15,6 +15,9 @@ create table if not exists users
     username   varchar(25)  not null
         constraint users_username_key
             unique,
+    email varchar(50) not null
+        constraint users_email_key
+            unique,
     password   varchar(100) not null,
     first_name varchar(30)  not null,
     last_name  varchar(30)  not null
@@ -52,6 +55,9 @@ create table if not exists task
     feature_id      integer      not null
         constraint task_fk0
             references feature,
+    current_user_id integer      not null
+        constraint task_fk1
+            references users,
     status       varchar      not null,
     bug_id          integer
 );
@@ -76,9 +82,12 @@ create table if not exists bug
         constraint bug_pk
             primary key,
     title       varchar(100) not null,
-    description varchar      not null
+    description varchar      not null,
+    status      varchar      not null,
+    task_id     integer      not null
+        constraint bug_fk0
+                    references task
 );
-alter table task add constraint "task_fk2" foreign key ("bug_id") references bug("id");
 
 
 

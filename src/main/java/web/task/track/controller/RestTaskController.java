@@ -10,11 +10,16 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import web.task.track.domain.Task;
 import web.task.track.domain.User;
-import web.task.track.dto.BugDto;
 import web.task.track.dto.AddTaskDto;
 import web.task.track.dto.FindTaskDto;
+import web.task.track.exception.ObjectNotFoundException;
+import web.task.track.exception.WrongRoleException;
+import web.task.track.exception.WrongStatusException;
+import web.task.track.exception.WrongUserException;
 import web.task.track.service.TaskService;
 import web.task.track.service.UserService;
+
+import java.security.Principal;
 import java.util.List;
 import java.util.Set;
 
@@ -35,8 +40,78 @@ public class RestTaskController {
     @ApiOperation(value = "Добавление задачи. Дочтупно только менеджеру")
     @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/add")
-    public ResponseEntity<Task> addTask(@Validated @RequestBody AddTaskDto addTaskDto) {
-        return taskService.add(addTaskDto);
+    public ResponseEntity<?> addTask(@Validated @RequestBody AddTaskDto addTaskDto, Principal principal) {
+        try {
+            Task task = taskService.add(addTaskDto, principal.getName());
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        } catch (ObjectNotFoundException | WrongRoleException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @ApiOperation(value = "Назанчение задачи на девелопера. Дочтупно только менеджеру")
+    @PreAuthorize("hasRole('MANAGER')")
+    @GetMapping("/assign/dev")
+    public ResponseEntity<?> assignToDeveloper(@RequestParam Integer taskId, @RequestParam String devUsername,
+                                               Principal principal){
+        try {
+            Task task = taskService.assignToDeveloper(taskId, devUsername, principal.getName());
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        } catch (ObjectNotFoundException | WrongRoleException | WrongStatusException | WrongUserException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PreAuthorize("hasRole('DEVELOPER')")
+    @GetMapping("/resolve/{id}")
+    @ApiOperation(value = "Выполнение задачи девелопером")
+    public ResponseEntity<?> resolveTask(@PathVariable Integer id, Principal principal) {
+        try {
+            Task task = taskService.findById(id);
+            User user = userService.findByUsername(principal.getName());
+            taskService.resolveTask(task, user);
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        } catch (ObjectNotFoundException | WrongStatusException | WrongRoleException | WrongUserException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @ApiOperation(value = "Назанчение задачи на тестера. Доступно только девелоперу")
+    @PreAuthorize("hasRole('DEVELOPER')")
+    @GetMapping("/assign/tester")
+    public ResponseEntity<?> assignToTester(@RequestParam Integer taskId, @RequestParam String devTester,
+                                            Principal principal){
+        try {
+            Task task = taskService.assignToTester(taskId, devTester, principal.getName());
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        } catch (ObjectNotFoundException | WrongRoleException | WrongStatusException | WrongUserException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PreAuthorize("hasRole('TESTER')")
+    @GetMapping("/return/{id}")
+    @ApiOperation(value = "Возврат задачи тестером на доработку")
+    public ResponseEntity<?> returnTask(@PathVariable Integer id, Principal principal){
+        try {
+            Task task = taskService.findById(id);
+            taskService.returnTask(task, principal.getName());
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        } catch (ObjectNotFoundException | WrongStatusException | WrongUserException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PreAuthorize("hasRole('TESTER')")
+    @GetMapping("/close/{id}")
+    @ApiOperation(value = "Закрытие задачи тестером")
+    public ResponseEntity<?> closeTask(@PathVariable Integer id, Principal principal){
+        try {
+            Task task = taskService.closeTask(id, principal.getName());
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        } catch (WrongStatusException | ObjectNotFoundException | WrongUserException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
@@ -48,9 +123,15 @@ public class RestTaskController {
 
     @GetMapping("/{id}")
     @ApiOperation(value = "Получение задачи по id")
-    public ResponseEntity<Task> getTask(@PathVariable Integer id)  {
-        Task task = taskService.findById(id);
-        return new ResponseEntity<>(task, HttpStatus.OK);
+    public ResponseEntity<?> getTask(@PathVariable Integer id)  {
+
+        try {
+            Task task = taskService.findById(id);
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        } catch (ObjectNotFoundException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
     }
 
     @GetMapping
@@ -62,46 +143,28 @@ public class RestTaskController {
 
     @PostMapping("/find")
     @ApiOperation(value = "Поиск задачи по пользователю, названию и статусу")
-    public ResponseEntity<Task> getTaskByUserAndTitleAndStatus(@RequestBody @Validated FindTaskDto findTaskDto){
-        User user = userService.findByUsername(findTaskDto.getUsername());
-        Task task = taskService.findByUserAndTitleAndStatus(user, findTaskDto.getTitle(), findTaskDto.getStatus());
-        return new ResponseEntity<>(task, HttpStatus.OK);
+    public ResponseEntity<?> getTaskByUserAndTitleAndStatus(@RequestBody @Validated FindTaskDto findTaskDto){
+
+        try {
+            User user = userService.findByUsername(findTaskDto.getUsername());
+            Task task = taskService.findByUserAndTitleAndStatus(user, findTaskDto.getTitle(), findTaskDto.getStatus());
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        } catch (ObjectNotFoundException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
 
     @GetMapping("/feature/{id}")
     @ApiOperation(value = "Получение всех задач в конкретной feature")
-    public ResponseEntity<Set<Task>> getTasksInFeature(@PathVariable Integer id){
-        Set<Task> tasks = taskService.inFeature(id);
-        return new ResponseEntity<>(tasks, HttpStatus.OK);
+    public ResponseEntity<?> getTasksInFeature(@PathVariable Integer id){
+        try {
+            Set<Task> tasks = taskService.getTasksInFeature(id);
+            return new ResponseEntity<>(tasks, HttpStatus.OK);
+        } catch (ObjectNotFoundException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
 
-    @PreAuthorize("hasRole('DEVELOPER')")
-    @GetMapping("/resolve")
-    @ApiOperation(value = "Выполнение задачи девелопером")
-    public ResponseEntity<Task> resolveTask(@RequestParam Integer id,
-                                            @RequestParam String username) {
-        Task task = taskService.findById(id);
-        User user = userService.findByUsername(username);
-        taskService.resolveTask(task, user);
-        return new ResponseEntity<>(task, HttpStatus.OK);
-    }
-
-
-    @PreAuthorize("hasRole('TESTER')")
-    @PostMapping("/return")
-    @ApiOperation(value = "Возврат задачи тестером на доработку")
-    public ResponseEntity<Task> returnTask(@RequestBody @Validated BugDto bugDto){
-        Task task = taskService.returnTask(bugDto);
-        return new ResponseEntity<>(task, HttpStatus.OK);
-    }
-
-    @PreAuthorize("hasRole('TESTER')")
-    @GetMapping("/close/{id}")
-    @ApiOperation(value = "Закрытие задачи тестером")
-    public ResponseEntity<Task> closeTask(@PathVariable Integer id){
-        Task task = taskService.closeTask(id);
-        return new ResponseEntity<>(task, HttpStatus.OK);
-    }
 }

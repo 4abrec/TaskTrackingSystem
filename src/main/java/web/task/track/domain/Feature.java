@@ -31,7 +31,6 @@ public class Feature {
     private Set<User> users;
 
     @OneToMany(mappedBy = "feature")
-    @JsonIgnore
     private Set<Task> tasks;
 
     @Column(name = "status")
@@ -43,5 +42,14 @@ public class Feature {
         this.description = description;
         this.users = users;
         this.statusFeature = EStatus.OPEN;
+    }
+
+    @Override
+    public String toString() {
+        return "Feature{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                '}';
     }
 }

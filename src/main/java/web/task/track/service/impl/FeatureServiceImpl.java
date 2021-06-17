@@ -1,12 +1,11 @@
 package web.task.track.service.impl;
 
-import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import web.task.track.domain.*;
 import web.task.track.dto.FeatureDto;
+import web.task.track.exception.TaskNotCompletedException;
+import web.task.track.exception.ObjectNotFoundException;
 import web.task.track.repository.FeatureRepository;
 import web.task.track.repository.UserRepository;
 import web.task.track.service.FeatureService;
@@ -36,18 +35,16 @@ public class FeatureServiceImpl implements FeatureService {
     участвуют в разработке.
      */
     @Override
-    public ResponseEntity<Feature> add(FeatureDto featureDto) {
+    public Feature add(FeatureDto featureDto) throws ObjectNotFoundException {
         Set<User> featureUsers = new HashSet<>();
-        featureDto.getUsers().forEach(user -> {
-            if (userRepository.existsByUsername(user)) {
-                featureUsers.add(userService.findByUsername(user));
+        for(String username: featureDto.getUsers()){
+            if (userRepository.existsByUsername(username)) {
+                featureUsers.add(userService.findByUsername(username));
             }
-            else try {
-                throw new NotFoundException("User not found with username " + user);
-            } catch (NotFoundException e) {
-                e.printStackTrace();
-            }
-        });
+            else
+                throw new ObjectNotFoundException("User not found with username " + username);
+        }
+
         Feature feature = new Feature(featureDto.getTitle(), featureDto.getDescription(), featureUsers);
         featureRepository.save(feature);
         featureUsers.forEach(user -> {
@@ -55,16 +52,16 @@ public class FeatureServiceImpl implements FeatureService {
             userService.save(user);
             }
         );
-        return new ResponseEntity<>(feature, HttpStatus.OK);
+        return feature;
     }
 
     /*
     Закрытие Feature. Сначала проверяется, все ли таски выполнены.
      */
     @Override
-    public Feature closeFeature(Integer id) {
+    public Feature closeFeature(Integer id) throws ObjectNotFoundException, TaskNotCompletedException {
         Feature feature = featureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("This feature does not exist"));
+                .orElseThrow(() -> new ObjectNotFoundException("This feature does not exist"));
         boolean isCompleted = feature.getTasks()
                 .stream()
                 .allMatch(task -> task.getStatus().equals(EStatus.COMPLETED));
@@ -74,14 +71,14 @@ public class FeatureServiceImpl implements FeatureService {
             return feature;
         }
         else
-            throw new RuntimeException("Not all tasks completed");
+            throw new TaskNotCompletedException("Not all tasks completed");
 
     }
 
     @Override
-    public Feature findById(Integer id) {
+    public Feature findById(Integer id) throws ObjectNotFoundException {
         return featureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Feature not found with id " + id));
+                .orElseThrow(() -> new ObjectNotFoundException("Feature not found with id " + id));
     }
 
     @Override
