@@ -15,14 +15,15 @@ import web.task.track.exception.WrongUserException;
 import web.task.track.repository.FeatureRepository;
 import web.task.track.repository.TaskRepository;
 import web.task.track.repository.UserRepository;
+
 import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TaskServiceTest  extends IntegrationTestBase{
+public class TaskServiceTest extends IntegrationTestBase {
 
     @Autowired
     private TaskService taskService;
-
 
     @Autowired
     private TaskRepository taskRepository;
@@ -41,13 +42,13 @@ public class TaskServiceTest  extends IntegrationTestBase{
     }
 
     @Test
-    void findAllTest(){
+    void findAllTest() {
         List<Task> tasks = taskService.findAll();
         assertNotEquals(0, tasks.size());
     }
 
     @Test
-    void saveTest(){
+    void saveTest() {
         Feature feature = featureRepository.findById(6).orElse(null);
         User user = userRepository.findById(4).orElse(null);
         assertNotNull(feature);
@@ -62,7 +63,7 @@ public class TaskServiceTest  extends IntegrationTestBase{
     void findByUserAndTitleAndStatusTest() throws ObjectNotFoundException {
         User user = userRepository.findById(8).orElse(null);
         assertNotNull(user);
-        Task task = taskService.findByUserAndTitleAndStatus(user,"testTask", EStatus.RESOLVED);
+        Task task = taskService.findByUserAndTitleAndStatus(user, "testTask", EStatus.RESOLVED);
         assertNotNull(task);
         assertEquals(8, task.getUser().getId());
         assertEquals("testTask", task.getTitle());
