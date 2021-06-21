@@ -6,6 +6,7 @@ import web.task.track.domain.ERole;
 import web.task.track.domain.Role;
 import web.task.track.repository.RoleRepository;
 import web.task.track.service.RoleService;
+
 import java.util.List;
 
 @Service
@@ -31,7 +32,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public List<Role> getAll() {
+    public List<Role> findAll() {
         return roleRepository.findAll();
     }
 

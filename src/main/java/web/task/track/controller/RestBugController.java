@@ -32,7 +32,7 @@ public class RestBugController {
 
     @PreAuthorize("hasRole('TESTER')")
     @PostMapping("/add")
-    public ResponseEntity<?> addBug(@RequestBody BugDto bugDto){
+    public ResponseEntity<?> addBug(@RequestBody BugDto bugDto) {
         try {
             Bug bug = bugService.add(bugDto);
             return new ResponseEntity<>(bug, HttpStatus.CREATED);

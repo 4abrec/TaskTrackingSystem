@@ -20,21 +20,21 @@ import java.util.Collections;
 @EnableSwagger2
 public class TrackApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(TrackApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(TrackApplication.class, args);
+    }
 
-	@Bean
-	public Docket trackApi() {
-		Parameter authHeader = new ParameterBuilder()
-				.parameterType("header")
-				.name("Authorization")
-				.modelRef(new ModelRef("string"))
-				.build();
+    @Bean
+    public Docket trackApi() {
+        Parameter authHeader = new ParameterBuilder()
+                .parameterType("header")
+                .name("Authorization")
+                .modelRef(new ModelRef("string"))
+                .build();
 
-		return new Docket(DocumentationType.SWAGGER_2)
-				.select().apis(RequestHandlerSelectors.basePackage("web.task.track.controller"))
-				.build()
-				.globalOperationParameters(Collections.singletonList(authHeader));
-	}
+        return new Docket(DocumentationType.SWAGGER_2)
+                .select().apis(RequestHandlerSelectors.basePackage("web.task.track.controller"))
+                .build()
+                .globalOperationParameters(Collections.singletonList(authHeader));
+    }
 }

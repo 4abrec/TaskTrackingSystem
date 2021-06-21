@@ -11,5 +11,5 @@ import java.util.Optional;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Integer>, RevisionRepository<Task, Integer, Integer> {
-        Optional<Task> findByUserAndTitleAndStatus(User user, String title, EStatus status);
+    Optional<Task> findByUserAndTitleAndStatus(User user, String title, EStatus status);
 }

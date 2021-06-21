@@ -6,6 +6,8 @@ import web.task.track.domain.*;
 import web.task.track.dto.FeatureDto;
 import web.task.track.exception.TaskNotCompletedException;
 import web.task.track.exception.ObjectNotFoundException;
+import web.task.track.exception.WrongUserException;
+import web.task.track.exception.constant.WrongUserExceptionConstants;
 import web.task.track.repository.FeatureRepository;
 import web.task.track.repository.UserRepository;
 import web.task.track.service.FeatureService;
@@ -30,10 +32,6 @@ public class FeatureServiceImpl implements FeatureService {
         this.userService = userService;
     }
 
-    /*
-    Создание Feature. При создании в Feature добавляются юзеры, которые
-    участвуют в разработке.
-     */
     @Override
     public Feature add(FeatureDto featureDto) throws ObjectNotFoundException {
         Set<User> featureUsers = new HashSet<>();
@@ -55,13 +53,12 @@ public class FeatureServiceImpl implements FeatureService {
         return feature;
     }
 
-    /*
-    Закрытие Feature. Сначала проверяется, все ли таски выполнены.
-     */
     @Override
-    public Feature closeFeature(Integer id) throws ObjectNotFoundException, TaskNotCompletedException {
+    public Feature closeFeature(Integer id, String principalUsername) throws ObjectNotFoundException, TaskNotCompletedException, WrongUserException {
         Feature feature = featureRepository.findById(id)
                 .orElseThrow(() -> new ObjectNotFoundException("This feature does not exist"));
+        if (!feature.getUsers().contains(userService.findByUsername(principalUsername)))
+            throw new WrongUserException(WrongUserExceptionConstants.NOT_THE_CURRENT_ASSIGNEE);
         boolean isCompleted = feature.getTasks()
                 .stream()
                 .allMatch(task -> task.getStatus().equals(EStatus.COMPLETED));

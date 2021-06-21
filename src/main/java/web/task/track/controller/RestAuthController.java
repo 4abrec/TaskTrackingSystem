@@ -36,12 +36,11 @@ public class RestAuthController {
 
     @PostMapping("/signup")
     @ApiOperation(value = "Регистрация")
-    public ResponseEntity<?> registerUser(@RequestBody RegistrationDto registrationDto){
+    public ResponseEntity<?> registerUser(@RequestBody RegistrationDto registrationDto) {
         try {
             return new ResponseEntity<>(userService.registration(registrationDto), HttpStatus.OK);
-        }catch (ObjectNotFoundException err){
-            return new ResponseEntity<>(err.getMessage(),HttpStatus.BAD_REQUEST);
+        } catch (ObjectNotFoundException err) {
+            return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);
         }
-
     }
 }

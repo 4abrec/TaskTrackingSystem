@@ -25,21 +25,21 @@ public class RestRoleController {
 
     @GetMapping("/{id}")
     @ApiOperation(value = "Получение роли по id")
-    public ResponseEntity<Role> findById(@PathVariable Integer id){
+    public ResponseEntity<Role> findById(@PathVariable Integer id) {
         Role role = roleService.findById(id);
         return new ResponseEntity<>(role, HttpStatus.OK);
     }
 
     @GetMapping
     @ApiOperation(value = "Получение всех ролей")
-    public ResponseEntity<List<Role>> getAll(){
-        List<Role> roles = roleService.getAll();
+    public ResponseEntity<List<Role>> getAll() {
+        List<Role> roles = roleService.findAll();
         return new ResponseEntity<>(roles, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     @ApiOperation(value = "Удаление роли. Доступно только администратору")
-    public void deleteById(@PathVariable Integer id){
+    public void deleteById(@PathVariable Integer id) {
         roleService.deleteById(id);
     }
 }

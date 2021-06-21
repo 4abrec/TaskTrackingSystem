@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import web.task.track.domain.User;
 import web.task.track.exception.ObjectNotFoundException;
 import web.task.track.service.UserService;
+
 import java.util.List;
 
 @RestController
@@ -27,7 +28,7 @@ public class RestUserController {
 
     @GetMapping("/{id}")
     @ApiOperation(value = "Поиск пользователя по id")
-    public ResponseEntity<?> getUser(@PathVariable Integer id){
+    public ResponseEntity<?> getUser(@PathVariable Integer id) {
         try {
             User user = userService.findById(id);
             return new ResponseEntity<>(user, HttpStatus.OK);
@@ -39,7 +40,7 @@ public class RestUserController {
     @PreAuthorize("hasRole('DEVELOPER')")
     @GetMapping
     @ApiOperation(value = "Получение всех юзеров")
-    public ResponseEntity<List<User>> getAllUser(){
+    public ResponseEntity<List<User>> getAllUser() {
         List<User> users = userService.findAll();
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
@@ -47,7 +48,7 @@ public class RestUserController {
     @PreAuthorize("ADMIN")
     @DeleteMapping("/{id}")
     @ApiOperation(value = "Удаление юзера. Доступно только администратору")
-    public void deleteUser(@PathVariable Integer id){
+    public void deleteUser(@PathVariable Integer id) {
         userService.deleteById(id);
     }
 }

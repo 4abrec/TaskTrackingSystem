@@ -15,4 +15,10 @@ public class AddTaskDto {
 
     @ApiModelProperty(example = "1")
     private Integer featureId;
+
+    public AddTaskDto(String title, String description, Integer featureId) {
+        this.title = title;
+        this.description = description;
+        this.featureId = featureId;
+    }
 }

@@ -1,7 +1,6 @@
-
 create table if not exists role
 (
-    id   serial     not null
+    id   serial      not null
         constraint role_pk
             primary key,
     name varchar(25) not null
@@ -9,13 +8,13 @@ create table if not exists role
 
 create table if not exists users
 (
-    id         serial     not null
+    id         serial       not null
         constraint users_pk
             primary key,
     username   varchar(25)  not null
         constraint users_username_key
             unique,
-    email varchar(50) not null
+    email      varchar(50)  not null
         constraint users_email_key
             unique,
     password   varchar(100) not null,
@@ -37,17 +36,17 @@ create table if not exists user_role
 
 create table if not exists feature
 (
-    id          serial      not null
+    id          serial       not null
         constraint feature_pk
             primary key,
     title       varchar(100) not null,
     description varchar      not null,
-    status varchar not null
+    status      varchar      not null
 );
 
 create table if not exists task
 (
-    id              serial      not null
+    id              serial       not null
         constraint task_pk
             primary key,
     title           varchar(100) not null,
@@ -58,7 +57,7 @@ create table if not exists task
     current_user_id integer      not null
         constraint task_fk1
             references users,
-    status       varchar      not null,
+    status          varchar      not null,
     bug_id          integer
 );
 
@@ -78,7 +77,7 @@ create table if not exists user_feature
 
 create table if not exists bug
 (
-    id          serial      not null
+    id          serial       not null
         constraint bug_pk
             primary key,
     title       varchar(100) not null,
@@ -86,7 +85,7 @@ create table if not exists bug
     status      varchar      not null,
     task_id     integer      not null
         constraint bug_fk0
-                    references task
+            references task
 );
 
 

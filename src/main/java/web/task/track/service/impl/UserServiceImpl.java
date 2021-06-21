@@ -83,9 +83,7 @@ public class UserServiceImpl implements UserService {
         return users;
     }
 
-    /*
-        Авторизация пользователя.
-         */
+
     @Override
     public JwtResponseDto login(LoginDto loginDto) {
         Authentication authentication = authenticationManager
@@ -108,10 +106,7 @@ public class UserServiceImpl implements UserService {
                 roles);
     }
 
-    /*
-    Регистрация пользователя. Сначала идет проверка на наличие текущего пользователя в базе данных.
-    Затем пользоватею устанавляиваются роли.
-     */
+
     @Override
     public MessageResponseDto registration(RegistrationDto registrationDto) throws ObjectNotFoundException {
         if (userRepository.existsByUsername(registrationDto.getUsername()))

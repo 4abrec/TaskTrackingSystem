@@ -3,6 +3,7 @@ package web.task.track.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.hibernate.envers.Audited;
 import javax.persistence.*;
 import java.util.Set;
@@ -12,6 +13,7 @@ import java.util.Set;
 @Data
 @Audited
 @EqualsAndHashCode(exclude = {"users"})
+@NoArgsConstructor
 public class Role {
 
     @Id
@@ -32,5 +34,9 @@ public class Role {
                 "id=" + id +
                 ", name=" + name +
                 '}';
+    }
+
+    public Role(ERole name) {
+        this.name = name;
     }
 }

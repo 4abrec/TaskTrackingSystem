@@ -37,7 +37,7 @@ public class RestTaskController {
         this.userService = userService;
     }
 
-    @ApiOperation(value = "Добавление задачи. Дочтупно только менеджеру")
+    @ApiOperation(value = "Добавление задачи. Доступно только менеджеру")
     @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/add")
     public ResponseEntity<?> addTask(@Validated @RequestBody AddTaskDto addTaskDto, Principal principal) {
@@ -49,11 +49,11 @@ public class RestTaskController {
         }
     }
 
-    @ApiOperation(value = "Назанчение задачи на девелопера. Дочтупно только менеджеру")
+    @ApiOperation(value = "Назанчение задачи на девелопера. Доступно только менеджеру")
     @PreAuthorize("hasRole('MANAGER')")
     @GetMapping("/assign/dev")
     public ResponseEntity<?> assignToDeveloper(@RequestParam Integer taskId, @RequestParam String devUsername,
-                                               Principal principal){
+                                               Principal principal) {
         try {
             Task task = taskService.assignToDeveloper(taskId, devUsername, principal.getName());
             return new ResponseEntity<>(task, HttpStatus.OK);
@@ -80,7 +80,7 @@ public class RestTaskController {
     @PreAuthorize("hasRole('DEVELOPER')")
     @GetMapping("/assign/tester")
     public ResponseEntity<?> assignToTester(@RequestParam Integer taskId, @RequestParam String devTester,
-                                            Principal principal){
+                                            Principal principal) {
         try {
             Task task = taskService.assignToTester(taskId, devTester, principal.getName());
             return new ResponseEntity<>(task, HttpStatus.OK);
@@ -92,7 +92,7 @@ public class RestTaskController {
     @PreAuthorize("hasRole('TESTER')")
     @GetMapping("/return/{id}")
     @ApiOperation(value = "Возврат задачи тестером на доработку")
-    public ResponseEntity<?> returnTask(@PathVariable Integer id, Principal principal){
+    public ResponseEntity<?> returnTask(@PathVariable Integer id, Principal principal) {
         try {
             Task task = taskService.findById(id);
             taskService.returnTask(task, principal.getName());
@@ -105,7 +105,7 @@ public class RestTaskController {
     @PreAuthorize("hasRole('TESTER')")
     @GetMapping("/close/{id}")
     @ApiOperation(value = "Закрытие задачи тестером")
-    public ResponseEntity<?> closeTask(@PathVariable Integer id, Principal principal){
+    public ResponseEntity<?> closeTask(@PathVariable Integer id, Principal principal) {
         try {
             Task task = taskService.closeTask(id, principal.getName());
             return new ResponseEntity<>(task, HttpStatus.OK);
@@ -117,13 +117,13 @@ public class RestTaskController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @DeleteMapping("/{id}")
     @ApiOperation(value = "Удаление задачи. Доступно только администратору или менеджеру")
-    public void deleteTask(@PathVariable Integer id){
+    public void deleteTask(@PathVariable Integer id) {
         taskService.deleteById(id);
     }
 
     @GetMapping("/{id}")
     @ApiOperation(value = "Получение задачи по id")
-    public ResponseEntity<?> getTask(@PathVariable Integer id)  {
+    public ResponseEntity<?> getTask(@PathVariable Integer id) {
 
         try {
             Task task = taskService.findById(id);
@@ -136,14 +136,14 @@ public class RestTaskController {
 
     @GetMapping
     @ApiOperation(value = "Получение всех задач")
-    public ResponseEntity<List<Task>> getAllTasks(){
+    public ResponseEntity<List<Task>> getAllTasks() {
         List<Task> tasks = taskService.findAll();
         return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
 
     @PostMapping("/find")
     @ApiOperation(value = "Поиск задачи по пользователю, названию и статусу")
-    public ResponseEntity<?> getTaskByUserAndTitleAndStatus(@RequestBody @Validated FindTaskDto findTaskDto){
+    public ResponseEntity<?> getTaskByUserAndTitleAndStatus(@RequestBody @Validated FindTaskDto findTaskDto) {
 
         try {
             User user = userService.findByUsername(findTaskDto.getUsername());
@@ -157,9 +157,9 @@ public class RestTaskController {
 
     @GetMapping("/feature/{id}")
     @ApiOperation(value = "Получение всех задач в конкретной feature")
-    public ResponseEntity<?> getTasksInFeature(@PathVariable Integer id){
+    public ResponseEntity<?> getTasksInFeature(@PathVariable Integer id) {
         try {
-            Set<Task> tasks = taskService.getTasksInFeature(id);
+            List<Task> tasks = taskService.getTasksInFeature(id);
             return new ResponseEntity<>(tasks, HttpStatus.OK);
         } catch (ObjectNotFoundException err) {
             return new ResponseEntity<>(err.getMessage(), HttpStatus.BAD_REQUEST);

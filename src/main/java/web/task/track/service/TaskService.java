@@ -1,6 +1,6 @@
 package web.task.track.service;
 
-import javassist.NotFoundException;
+
 import web.task.track.domain.EStatus;
 import web.task.track.domain.Task;
 import web.task.track.domain.User;
@@ -16,16 +16,28 @@ import java.util.Set;
 public interface TaskService {
 
     Task add(AddTaskDto addTaskDto, String username) throws ObjectNotFoundException, WrongRoleException;
+
     Task assignToDeveloper(Integer id, String devUsername, String principalUsername) throws ObjectNotFoundException, WrongRoleException, WrongStatusException, WrongUserException;
+
     Task assignToTester(Integer id, String testerUsername, String principalUsername) throws ObjectNotFoundException, WrongUserException, WrongRoleException, WrongStatusException;
-    void resolveTask(Task task, User user) throws WrongRoleException, WrongStatusException, ObjectNotFoundException, WrongUserException;
+
+    Task resolveTask(Task task, User user) throws WrongRoleException, WrongStatusException, ObjectNotFoundException, WrongUserException;
+
     List<Task> getTaskEditHistory(Integer postID);
+
     List<Task> findAll();
+
     Task findById(Integer id) throws ObjectNotFoundException;
+
     Task closeTask(Integer id, String principalUsername) throws WrongStatusException, ObjectNotFoundException, WrongUserException;
+
     void returnTask(Task task, String principalUsername) throws ObjectNotFoundException, WrongUserException, WrongStatusException;
+
     Task findByUserAndTitleAndStatus(User user, String title, EStatus status) throws ObjectNotFoundException;
-    Set<Task> getTasksInFeature(Integer id) throws ObjectNotFoundException;
+
+    List<Task> getTasksInFeature(Integer id) throws ObjectNotFoundException;
+
     void save(Task task);
+
     void deleteById(Integer id);
 }

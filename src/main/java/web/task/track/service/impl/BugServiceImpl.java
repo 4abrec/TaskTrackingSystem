@@ -14,6 +14,8 @@ import web.task.track.service.BugService;
 import web.task.track.service.TaskService;
 import web.task.track.service.UserService;
 
+import java.util.List;
+
 @Service
 public class BugServiceImpl implements BugService {
 
@@ -31,7 +33,7 @@ public class BugServiceImpl implements BugService {
     @Override
     public Bug add(BugDto bugDto) throws ObjectNotFoundException {
         Task task = taskService.findById(bugDto.getTaskId());
-        Bug bug = new Bug(task.getTitle(), task.getDescription(), EStatus.OPEN, task);
+        Bug bug = new Bug(bugDto.getTitle(), bugDto.getDescription(), EStatus.OPEN, task);
         bugRepository.save(bug);
         return bug;
     }
@@ -43,7 +45,7 @@ public class BugServiceImpl implements BugService {
     }
 
     @Override
-    public void fixBug(Integer bugId, Task task, String principalUsername) throws ObjectNotFoundException, WrongUserException {
+    public Bug fixBug(Integer bugId, Task task, String principalUsername) throws ObjectNotFoundException, WrongUserException {
         if (!task.getUser().equals(userService.findByUsername(principalUsername)))
             throw new WrongUserException(WrongUserExceptionConstants.NOT_THE_CURRENT_ASSIGNEE);
         Bug bug = findByIdAndTask(bugId, task);
@@ -51,5 +53,27 @@ public class BugServiceImpl implements BugService {
         bugRepository.save(bug);
         task.setStatus(EStatus.RESOLVED);
         taskService.save(task);
+        return bug;
+    }
+
+    @Override
+    public Bug findById(Integer id) throws ObjectNotFoundException {
+        return bugRepository.findById(id)
+                .orElseThrow(() -> new ObjectNotFoundException("Bug with id: " + id + " is not found"));
+    }
+
+    @Override
+    public List<Bug> findAll() {
+        return bugRepository.findAll();
+    }
+
+    @Override
+    public void save(Bug bug) {
+        bugRepository.save(bug);
+    }
+
+    @Override
+    public void deleteById(Integer id) {
+        bugRepository.deleteById(id);
     }
 }
